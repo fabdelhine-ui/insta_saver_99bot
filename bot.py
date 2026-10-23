@@ -37,7 +37,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
-
+            
         if os.path.exists(output_filename):
             with open(output_filename, "rb") as f:
                 await update.message.reply_video(video=f)
@@ -45,7 +45,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await status_msg.delete()
         else:
             await status_msg.edit_text("❌ لم نتمكن من إيجاد الفيديو، تأكد أن الحساب ليس خاصاً (Private).")
-
+            
     except Exception as e:
         logging.error(f"Insta Download Error: {e}")
         if os.path.exists(output_filename):
@@ -53,7 +53,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await status_msg.edit_text("❌ حدث خطأ أثناء التحميل. تأكد من صحة الرابط وأنه حساب عام.")
 
 if __name__ == "__main__":
-    app = ApplicationBuilder().token(TOKEN).build()
+    app = (
+        ApplicationBuilder()
+        .token(TOKEN)
+        .connect_timeout(30)
+        .read_timeout(30)
+        .write_timeout(30)
+        .build()
+    )
+    
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
+    
     app.run_polling()
