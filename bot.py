@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO)
 TOKEN = "8825604569:AAG6Ehv_XzG57gMvyFhTE7pHcooIORNAnZw"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("أهلاً بك! 📸\nأرسل لي رابط فيديو من إنستغرام (Reels) وسأقوم بتحميله لك فوراً.")
+    await update.message.reply_text("أهلاً بك! 📸\nأرسل لي رابط فيديو من إنستغرام (Reels) وسأقوم بتحميله لك مع الصوت بجودة عالية.")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
@@ -22,15 +22,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if "instagram.com" in url and "?" in url:
         url = url.split("?")[0]
 
-    status_msg = await update.message.reply_text("⏳ جاري تحميل فيديو إنستغرام، يرجى الانتظار...")
+    status_msg = await update.message.reply_text("⏳ جاري تحميل الفيديو مع الصوت، يرجى الانتظار...")
 
     output_filename = f"insta_{update.message.chat_id}.mp4"
 
+    # تحديث الخيارات لضمان دمج أفضل صوت وفيديو معاً
     ydl_opts = {
-        'format': 'best',
+        'format': 'bv*+ba/b',  # اختيار أفضل فيديو وأفضل صوت ودمجهما
         'outtmpl': output_filename,
         'quiet': True,
         'no_warnings': True,
+        'merge_output_format': 'mp4',
         'user_agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
     }
 
