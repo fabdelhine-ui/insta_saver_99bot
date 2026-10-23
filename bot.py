@@ -73,7 +73,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("الرجاء إرسال رابط إنستغرام صالح لتحميله.")
 
 def main():
-    TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+    TOKEN = os.getenv("8825604569:AAG6Ehv_XzG57gMvyFhTE7pHcooIORNAnZw")
     app = Application.builder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start_command))
