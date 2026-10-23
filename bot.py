@@ -1,95 +1,69 @@
 import os
 import logging
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import yt_dlp
+from telegram import Update
+from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
 
-# إعداد السجلات لمتابعة حالة البوت والأخطاء
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
-logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
-# وضع التوكن المباشر الخاص بك هنا
-BOT_TOKEN = "8825604569:AAG6Ehv_XzG57gMvyFhTE7pHcooIORNaNzW"
-
-# مجموعة لتخزين المستخدمين الذين قاموا بإدخال الرمز الصحيح بنجاح
-verified_users = set()
-
-# الرمز السري المطلوب للوصول (البوابة)
-SECRET_CODE = "7"
+TOKEN = "8825604569:AAG6Ehv_XzG57gMvyFhTE7pHcooIORNAnZw"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """دالة البدء، ترحب بالمستخدم وتطلب منه إدخال رمز التحقق."""
-    user_id = update.effective_user.id
-    # إزالة المستخدم من القائمة المؤكدة عند البدء من جديد لضمان الحماية
-    if user_id in verified_users:
-        verified_users.remove(user_id)
-        
-    await update.message.reply_text(
-        "أهلاً بك في بوت تحميل إنستغرام!\n"
-        "هذا البوت محمي بكلمة مرور. يرجى إرسال رمز الدخول للتمكن من استخدام البوت:"
-    )
+    await update.message.reply_text("أهلاً بك! 📸\nأرسل لي رابط فيديو من إنستغرام (Reels) وسأقوم بتحميله لك فوراً.")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """التعامل مع الرسائل الواردة (إما الرمز السري أو روابط إنستغرام)."""
-    user_id = update.effective_user.id
-    text = update.message.text.strip()
-
-    # الخطوة الأولى: التحقق مما إذا كان المستخدم لم يقم بإدخال الرمز بعد
-    if user_id not in verified_users:
-        if text == SECRET_CODE:
-            verified_users.add(user_id)
-            await update.message.reply_text(
-                "✅ تم التحقق بنجاح!\n"
-                "يمكنك الآن إرسال أي رابط فيديو أو منشور من إنستغرام لتحميله."
-            )
-        else:
-            await update.message.reply_text(
-                "❌ الرمز غير صحيح. يرجى إدخال الرمز الصحيح للمتابعة."
-            )
+    if not update.message or not update.message.text:
         return
 
-    # الخطوة الثانية: إذا كان المستخدم مؤكداً، نبدأ بتحميل رابط إنستغرام
-    if "instagram.com" in text:
-        await update.message.reply_text("⏳ جاري تحميل المحتوى من إنستغرام، يرجى الانتظار...")
-        
-        # إعدادات yt-dlp للتحميل
-        ydl_opts = {
-            'format': 'best',
-            'outtmpl': 'downloaded_video.mp4',
-            'quiet': True,
-        }
+    url = update.message.text.strip()
+    if not url.startswith("http"):
+        return
 
-        try:
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(text, download=True)
-                filename = ydl.prepare_filename(info)
+    if "instagram.com" in url and "?" in url:
+        url = url.split("?")[0]
+
+    status_msg = await update.message.reply_text("⏳ جاري تحميل الفيديو، يرجى الانتظار...")
+
+    output_filename = f"insta_{update.message.chat_id}.mp4"
+
+    # استخدام صيغة جاهزة ومباشرة لتجنب مشاكل الدمج والمهلة الزمنية
+    ydl_opts = {
+        'format': 'best[ext=mp4]/best',
+        'outtmpl': output_filename,
+        'quiet': True,
+        'no_warnings': True,
+        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    }
+
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
             
-            # إرسال الفيديو للمستخدم
-            with open(filename, 'rb') as video_file:
-                await update.message.reply_video(video=video_file)
-                
-            # حذف الملف المحلي بعد الإرسال لتوفير المساحة
-            if os.path.exists(filename):
-                os.remove(filename)
-                
-        except Exception as e:
-            logger.error(f"خطأ في التحميل: {e}")
-            await update.message.reply_text("حدث خطأ أثناء محاولة تحميل الفيديو. تأكد أن الرابط صحيح وعام.")
-    else:
-        await update.message.reply_text("الرجاء إرسال رابط إنستغرام صالح للتحميل.")
-
-def main():
-    """تشغيل البوت باستخدام التوكن المباشر."""
-    application = Application.builder().token(BOT_TOKEN).build()
-
-    # إضافة الأوامر ومعالجات الرسائل
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
-    # تشغيل البوت
-    application.run_polling()
+        if os.path.exists(output_filename):
+            with open(output_filename, "rb") as f:
+                await update.message.reply_video(video=f)
+            os.remove(output_filename)
+            await status_msg.delete()
+        else:
+            await status_msg.edit_text("❌ لم نتمكن من إيجاد الفيديو، تأكد أن الحساب ليس خاصاً (Private).")
+            
+    except Exception as e:
+        logging.error(f"Insta Download Error: {e}")
+        if os.path.exists(output_filename):
+            os.remove(output_filename)
+        await status_msg.edit_text("❌ حدث خطأ أثناء التحميل. تأكد من صحة الرابط وأنه حساب عام.")
 
 if __name__ == "__main__":
-    main()
+    app = (
+        ApplicationBuilder()
+        .token(TOKEN)
+        .connect_timeout(60)
+        .read_timeout(60)
+        .write_timeout(60)
+        .build()
+    )
+    
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
+    
+    app.run_polling()
