@@ -1,0 +1,6 @@
+ydl_opts = {
+    'format': 'bv*+ba/b', # تحميل أفضل فيديو + أفضل صوت ودمجهما
+    'outtmpl': output_filename,
+    'merge_output_format': 'mp4',
+    'quiet': True,
+}
