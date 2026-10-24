@@ -8,7 +8,7 @@ from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, Messa
 logging.basicConfig(level=logging.INFO)
 
 # التوكن الخاص ببوتك
-TOKEN = "8825604569:AAHLkYHHpjMjonlIDEYfRUF_utVYoxL8IVw"
+TOKEN = "8825604569:AAEOH6mTecwzaw5ylrQ0NlXctg5JrRZNbKc"
 
 # قناتك الرسمية
 CHANNEL_USERNAME = "@mounibdch" 
