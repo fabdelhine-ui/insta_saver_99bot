@@ -16,11 +16,11 @@ CHANNEL_LINK = "https://t.me/mounibdch"
 
 # قاعدة البيانات المؤقتة
 user_points = {}
-last_daily_claim = {}  # { user_id: datetime } لحفظ وقت آخر هدية يومية
+last_daily_claim = {}
 
-DEFAULT_FREE_POINTS = 3   # النقاط المجانية عند البدء
-POINTS_PER_REFERRAL = 2   # النقاط عند دعوة صديق
-DAILY_BONUS_POINTS = 10   # عدد نقاط الهدية اليومية
+DEFAULT_FREE_POINTS = 3
+POINTS_PER_REFERRAL = 2
+DAILY_BONUS_POINTS = 10
 
 PROMO_CODES = {
     "VIP100": {"points": 100, "used_by": set()},
@@ -50,7 +50,6 @@ async def send_sub_request(update: Update):
         await update.callback_query.message.reply_text(msg, reply_markup=reply_markup)
 
 def get_main_keyboard():
-    """أزرار تحكم شفافة واحترافية"""
     keyboard = [
         [InlineKeyboardButton("🎁 الهدية اليومية", callback_data="claim_daily"), InlineKeyboardButton("💰 رصيدي", callback_data="get_balance")],
         [InlineKeyboardButton("📢 القناة الرسمية", url=CHANNEL_LINK)]
@@ -82,8 +81,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     bot_username = (await context.bot.get_me()).username
     ref_link = f"https://t.me/{bot_username}?start={user_id}"
 
-    welcome_text = (
-        f"أهلاً بك في محمل فيديوهات إنستغرام! 📸\n\n"
-        f"💰 رصيدك الحالي: **{user_points[user_id]} نقاط**\n"
-        f"أرسل لي رابط فيديو من إنستغرام (Reels) وسأقوم بتحميله (تكلفة التحميل: 1 نقطة).\n\n"
-        f"🎁 **الهدية اليومية:** يمكنك الحصول على +{DAILY_BONUS_POINTS} نقاط يومياً عبر الأزرار
+    welcome_text = f"""أهلاً بك في محمل فيديوهات إنستغرام! 📸
+
+💰 رصيدك الحالي: **{user_points[user_id]} نقاط**
+أرسل لي رابط فيديو من إنستغرام (Reels) وسأقوم بتحميله (تكلفة التحميل: 1 نقطة).
+
+🎁 **الهدية اليومية:** يمكنك الحصول على +{DAILY_BONUS_POINTS} نقاط يومياً عبر الأزرار أدناه!
+🎟️ **الأكواد:** أرسل /
