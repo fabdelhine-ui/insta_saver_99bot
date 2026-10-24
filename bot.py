@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 BOT_TOKEN = "8825604569:AAFv7EHlnJwZDeaXoGxY7nTrzQso2TeriV8"
 
-# بيانات المستخدمين (النقاط، التحقق، وتاريخ آخر هدية يومية)
+# بيانات المستخدمين
 user_data = {}
 verified_users = set()
 SECRET_CODE = "7"
@@ -37,13 +37,45 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         verified_users.remove(user_id)
         
     if user_id not in user_data:
-        user_data[user_id] = {"points": 10, "last_gift": None}  # رصيد ابتدائي 10 نقاط
+        user_data[user_id] = {"points": 10, "last_gift": None}
 
     await update.message.reply_text(
         "أهلاً بك في بوت تحميل إنستغرام مع نظام النقاط والهدية اليومية!\n"
         "هذا البوت محمي بكلمة مرور. يرجى إرسال رمز الدخول (الرمز 7) للتمكن من استخدام البوت:"
     )
 
+# دالة معرفة الرصيد
+async def balance_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if user_id not in verified_users:
+        await update.message.reply_text("⚠️ يجب عليك إرسال رمز الدخول (7) أولاً عبر أمر /start.")
+        return
+    
+    if user_id not in user_data:
+        user_data[user_id] = {"points": 10, "last_gift": None}
+        
+    pts = user_data[user_id]["points"]
+    await update.message.reply_text(f"💰 رصيدك الحالي هو: {pts} نقطة.")
+
+# دالة الهدية اليومية
+async def gift_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if user_id not in verified_users:
+        await update.message.reply_text("⚠️ يجب عليك إرسال رمز الدخول (7) أولاً عبر أمر /start.")
+        return
+        
+    if user_id not in user_data:
+        user_data[user_id] = {"points": 10, "last_gift": None}
+
+    now = datetime.date.today()
+    if user_data[user_id]["last_gift"] == now:
+        await update.message.reply_text("🎁 لقد استلمت هديتك اليومية بالفعل! عُد غداً لربح المزيد.")
+    else:
+        user_data[user_id]["points"] += 5
+        user_data[user_id]["last_gift"] = now
+        await update.message.reply_text(f"🎉 مبروك! حصلت على هدية يومية 5 نقاط. رصيدك الآن: {user_data[user_id]['points']} نقطة.")
+
+# دالة استقبال الرسائل والروابط
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     text = update.message.text.strip()
@@ -51,35 +83,19 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if user_id not in user_data:
         user_data[user_id] = {"points": 10, "last_gift": None}
 
-    # الخطوة الأولى: التحقق من رمز البوابة
+    # التحقق من رمز البوابة
     if user_id not in verified_users:
         if text == SECRET_CODE:
             verified_users.add(user_id)
             await update.message.reply_text(
                 "✅ تم التحقق بنجاح!\n"
-                "يمكنك الآن إرسال روابط إنستغرام للتحميل، أو كتابة /gift للحصول على هديتك اليومية، أو /balance لمعرفة نقاطك."
+                "يمكنك الآن إرسال روابط إنستغرام للتحميل، أو استخدام /gift للحصول على هديتك اليومية، أو /balance لمعرفة نقاطك."
             )
         else:
             await update.message.reply_text("❌ الرمز غير صحيح. يرجى إرسال الرمز الصحيح للمتابعة.")
         return
 
-    # الأوامر الإضافية داخل البوت للمستخدمين المعتمدين
-    if text == "/balance":
-        pts = user_data[user_id]["points"]
-        await update.message.reply_text(f"💰 رصيدك الحالي هو: {pts} نقطة.")
-        return
-
-    if text == "/gift":
-        now = datetime.date.today()
-        if user_data[user_id]["last_gift"] == now:
-            await update.message.reply_text("🎁 لقد استلمت هديتك اليومية بالفعل! عُد غداً لربح المزيد.")
-        else:
-            user_data[user_id]["points"] += 5
-            user_data[user_id]["last_gift"] = now
-            await update.message.reply_text(f"🎉 مبروك! حصلت على هدية يومية 5 نقاط. رصيدك الآن: {user_data[user_id]['points']} نقطة.")
-        return
-
-    # الخطوة الثانية: تحميل فيديوهات إنستغرام
+    # معالجة روابط إنستغرام
     if "instagram.com" in text:
         if user_data[user_id]["points"] <= 0:
             await update.message.reply_text("⚠️ رصيدك من النقاط نفد! استخدم /gift للحصول على نقاط يومية جديدة.")
@@ -113,17 +129,20 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.error(f"خطأ في التحميل: {e}")
             await update.message.reply_text("حدث خطأ أثناء محاولة تحميل الفيديو. تأكد أن الرابط صحيح وعام.")
     else:
-        await update.message.reply_text("الرجاء إرسال رابط إنستغرام صالح، أو استخدم الأوامر المتاحة مثل /balance لمعرفة نقاطك أو /gift للهدية اليومية.")
+        await update.message.reply_text("الرجاء إرسال رابط إنستغرام صالح، أو استخدم الأوامر المتاحة مثل /balance أو /gift.")
 
 def main():
-    # تشغيل خادم الويب في الخلفية
     t = Thread(target=run_flask)
     t.daemon = True
     t.start()
 
     application = Application.builder().token(BOT_TOKEN).build()
 
+    # تسجيل الأوامر بشكل منفصل وصريح لضمان استجابتها الفورية
     application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("balance", balance_command))
+    application.add_handler(CommandHandler("gift", gift_command))
+    
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     application.run_polling()
