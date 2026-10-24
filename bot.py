@@ -18,9 +18,10 @@ CHANNEL_LINK = "https://t.me/mounibdch"
 user_points = {}
 last_daily_claim = {}
 
-DEFAULT_FREE_POINTS = 3
+DEFAULT_FREE_POINTS = 6
 POINTS_PER_REFERRAL = 2
-DAILY_BONUS_POINTS = 10
+DAILY_BONUS_POINTS = 3  # 👈 تم تعديل الهدية اليومية لتصبح 3 نقاط
+POINTS_PER_DOWNLOAD = 3  # تكلفة تحميل الفيديو الواحد
 
 PROMO_CODES = {
     "VIP100": {"points": 100, "used_by": set()},
@@ -67,7 +68,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     welcome_text = (
         "أهلاً بك في محمل فيديوهات إنستغرام! 📸\n\n"
         f"💰 رصيدك الحالي: {user_points[user_id]} نقاط\n"
-        "أرسل لي رابط فيديو من إنستغرام (Reels) وسأقوم بتحميله (تكلفة التحميل: 1 نقطة).\n\n"
+        f"أرسل لي رابط فيديو من إنستغرام (Reels) وسأقوم بتحميله (تكلفة التحميل: {POINTS_PER_DOWNLOAD} نقاط).\n\n"
         f"🎁 الهدية اليومية: يمكنك الحصول على +{DAILY_BONUS_POINTS} نقاط يومياً عبر الأزرار أدناه!\n"
         "🎟️ الأكواد: أرسل /code اسم_الكود لتفعيل الكود الترويجي.\n\n"
         "🔗 رابط الدعوة الخاص بك:\n"
@@ -170,11 +171,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
     current_points = user_points.get(user_id, DEFAULT_FREE_POINTS)
-    if current_points <= 0:
+    if current_points < POINTS_PER_DOWNLOAD:
         bot_username = (await context.bot.get_me()).username
         ref_link = f"https://t.me/{bot_username}?start={user_id}"
         await update.message.reply_text(
-            "❌ عذراً، نفدت نقاطك!\n\n"
+            f"❌ عذراً، رصيدك غير كافٍ! تحتاج إلى {POINTS_PER_DOWNLOAD} نقاط لتحميل فيديو.\n\n"
             "خذ الهدية اليومية عبر أزرار التحكم أو استخدم كود هدية /code للحصول على نقاط:\n"
             f"{ref_link}"
         )
@@ -206,7 +207,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             with open(output_filename, "rb") as f:
                 await update.message.reply_video(video=f)
             
-            user_points[user_id] -= 1
+            user_points[user_id] -= POINTS_PER_DOWNLOAD
             await update.message.reply_text(f"✅ تم التحميل بنجاح! الرصيد المتبقي: {user_points[user_id]} نقاط.")
             
             os.remove(output_filename)
