@@ -6,7 +6,8 @@ from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, Messa
 
 logging.basicConfig(level=logging.INFO)
 
-TOKEN = "8825604569:AAG6Ehv_XzG57gMvyFhTE7pHcooIORNAnZw"
+TOKEN = "8825604569:AAEchttq-ix36kFL9Qt4GlnDS3hDUBnxFn0
+"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("أهلاً بك! 📸\nأرسل لي رابط فيديو من إنستغرام (Reels) وسأقوم بتحميله لك فوراً.")
