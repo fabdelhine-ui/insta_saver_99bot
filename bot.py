@@ -66,16 +66,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     welcome_text = (
         "أهلاً بك في محمل فيديوهات إنستغرام! 📸\n\n"
-        f"💰 رصيدك الحالي: **{user_points[user_id]} نقاط**\n"
+        f"💰 رصيدك الحالي: {user_points[user_id]} نقاط\n"
         "أرسل لي رابط فيديو من إنستغرام (Reels) وسأقوم بتحميله (تكلفة التحميل: 1 نقطة).\n\n"
-        f"🎁 **الهدية اليومية:** يمكنك الحصول على +{DAILY_BONUS_POINTS} نقاط يومياً عبر الأزرار أدناه!\n"
-        "🎟️ **الأكواد:** أرسل /code اسم_الكود لتفعيل الكود الترويجي.\n\n"
-        "🔗 **رابط الدعوة الخاص بك:**\n"
+        f"🎁 الهدية اليومية: يمكنك الحصول على +{DAILY_BONUS_POINTS} نقاط يومياً عبر الأزرار أدناه!\n"
+        "🎟️ الأكواد: أرسل /code اسم_الكود لتفعيل الكود الترويجي.\n\n"
+        "🔗 رابط الدعوة الخاص بك:\n"
         f"{ref_link}\n"
         f"شارك هذا الرابط واحصل على +{POINTS_PER_REFERRAL} نقاط لكل شخص ينضم!"
     )
 
-    await update.message.reply_text(welcome_text, parse_mode="Markdown", reply_markup=get_main_keyboard())
+    await update.message.reply_text(welcome_text, reply_markup=get_main_keyboard())
 
 async def claim_daily_bonus(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query if update.callback_query else None
@@ -88,24 +88,24 @@ async def claim_daily_bonus(update: Update, context: ContextTypes.DEFAULT_TYPE):
         time_left = timedelta(hours=24) - (now - last_claim)
         hours, remainder = divmod(int(time_left.total_seconds()), 3600)
         minutes, _ = divmod(remainder, 60)
-        msg = f"⏳ لقد أخذت هديتك اليومية بالفعل!\nيرجى العودة بعد **{hours} ساعة و {minutes} دقيقة**."
+        msg = f"⏳ لقد أخذت هديتك اليومية بالفعل!\nيرجى العودة بعد {hours} ساعة و {minutes} دقيقة."
         
         if query:
             await query.answer(msg, show_alert=True)
         else:
-            await update.message.reply_text(msg, parse_mode="Markdown")
+            await update.message.reply_text(msg)
         return
 
     last_daily_claim[user_id] = now
     user_points[user_id] = user_points.get(user_id, DEFAULT_FREE_POINTS) + DAILY_BONUS_POINTS
     
-    success_msg = f"🎉 مبروك! حصلت على هديتك اليومية وهي **+{DAILY_BONUS_POINTS} نقاط**.\n💰 رصيدك الآن: **{user_points[user_id]} نقاط**."
+    success_msg = f"🎉 مبروك! حصلت على هديتك اليومية وهي +{DAILY_BONUS_POINTS} نقاط.\n💰 رصيدك الآن: {user_points[user_id]} نقاط."
     
     if query:
         await query.answer("🎉 تم استلام الهدية اليومية بنجاح!", show_alert=True)
-        await query.message.reply_text(success_msg, parse_mode="Markdown")
+        await query.message.reply_text(success_msg)
     else:
-        await update.message.reply_text(success_msg, parse_mode="Markdown")
+        await update.message.reply_text(success_msg)
 
 async def balance_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -114,24 +114,24 @@ async def balance_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ref_link = f"https://t.me/{bot_username}?start={user_id}"
 
     text = (
-        f"📊 **رصيدك الحالي:** {points} نقطة\n\n"
-        "🎁 **الهدية اليومية:** اضغط الزر أدناه كل 24 ساعة.\n"
-        "🎟️ **استبدال كود:** أرسل /code الكود\n\n"
-        "🔗 **رابط الدعوة الخاص بك:**\n"
+        f"📊 رصيدك الحالي: {points} نقطة\n\n"
+        "🎁 الهدية اليومية: اضغط الزر أدناه كل 24 ساعة.\n"
+        "🎟️ استبدال كود: أرسل /code الكود\n\n"
+        "🔗 رابط الدعوة الخاص بك:\n"
         f"{ref_link}"
     )
 
     if update.callback_query:
         await update.callback_query.answer()
-        await update.callback_query.message.reply_text(text, parse_mode="Markdown", reply_markup=get_main_keyboard())
+        await update.callback_query.message.reply_text(text, reply_markup=get_main_keyboard())
     else:
-        await update.message.reply_text(text, parse_mode="Markdown", reply_markup=get_main_keyboard())
+        await update.message.reply_text(text, reply_markup=get_main_keyboard())
 
 async def redeem_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
     if not context.args:
-        await update.message.reply_text("⚠️ **يرجى كتابة الكود بعد الأمر!**\nمثال: /code VIP100", parse_mode="Markdown")
+        await update.message.reply_text("⚠️ يرجى كتابة الكود بعد الأمر!\nمثال: /code VIP100")
         return
 
     code_entered = context.args[0].strip().upper()
@@ -147,10 +147,9 @@ async def redeem_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
         code_data["used_by"].add(user_id)
 
         await update.message.reply_text(
-            f"🎉 **مبروك!** تم تفعيل الكود بنجاح.\n"
-            f"➕ حصلت على **+{reward_points}** نقطة إضافية!\n"
-            f"💰 رصيدك الإجمالي الآن: **{user_points[user_id]}** نقاط.",
-            parse_mode="Markdown"
+            f"🎉 مبروك! تم تفعيل الكود بنجاح.\n"
+            f"➕ حصلت على +{reward_points} نقطة إضافية!\n"
+            f"💰 رصيدك الإجمالي الآن: {user_points[user_id]} نقاط."
         )
     else:
         await update.message.reply_text("❌ الكود غير صحيح أو انتهت صلاحيته!")
@@ -175,10 +174,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         bot_username = (await context.bot.get_me()).username
         ref_link = f"https://t.me/{bot_username}?start={user_id}"
         await update.message.reply_text(
-            "❌ **عذراً، نفدت نقاطك!**\n\n"
-            "خذ الهدية اليومية عبر أزرار التحكم أو استخدم كود هدية /code الكود للحصول على نقاط:\n"
-            f"{ref_link}",
-            parse_mode="Markdown"
+            "❌ عذراً، نفدت نقاطك!\n\n"
+            "خذ الهدية اليومية عبر أزرار التحكم أو استخدم كود هدية /code للحصول على نقاط:\n"
+            f"{ref_link}"
         )
         return
 
