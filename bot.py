@@ -8,9 +8,9 @@ from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, Messa
 logging.basicConfig(level=logging.INFO)
 
 # التوكن الخاص ببوتك
-TOKEN = "8825604569:AAFexY43gDfWVTQE124OqIZrohBE_MR12xc"
+TOKEN = "8825604569:AAHLkYHHpjMjonlIDEYfRUF_utVYoxL8IVw"
 
-# قناتك الرسمية للتحقق من الاشتراك الإجباري
+# قناتك الرسمية
 CHANNEL_USERNAME = "@mounibdch" 
 CHANNEL_LINK = "https://t.me/mounibdch"
 
@@ -34,20 +34,7 @@ async def is_subscribed(bot, user_id: int) -> bool:
         return member.status in ['creator', 'administrator', 'member']
     except Exception as e:
         logging.error(f"Check subscription error: {e}")
-        return False
-
-async def send_sub_request(update: Update):
-    keyboard = [
-        [InlineKeyboardButton("📢 اشترك في قناة البوت أولاً", url=CHANNEL_LINK)],
-        [InlineKeyboardButton("✅ تحقّق من الاشتراك", callback_data="check_sub")]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    msg = "⚠️ لاستخدام البوت، يجب عليك الانضمام إلى قناتنا الرسمية أولاً!"
-    
-    if update.message:
-        await update.message.reply_text(msg, reply_markup=reply_markup)
-    elif update.callback_query:
-        await update.callback_query.message.reply_text(msg, reply_markup=reply_markup)
+        return True
 
 def get_main_keyboard():
     keyboard = [
@@ -74,10 +61,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             except ValueError:
                 pass
 
-    if not await is_subscribed(context.bot, user_id):
-        await send_sub_request(update)
-        return
-
     bot_username = (await context.bot.get_me()).username
     ref_link = f"https://t.me/{bot_username}?start={user_id}"
 
@@ -97,10 +80,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def claim_daily_bonus(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query if update.callback_query else None
     user_id = update.effective_user.id
-
-    if not await is_subscribed(context.bot, user_id):
-        await send_sub_request(update)
-        return
 
     now = datetime.now()
     last_claim = last_daily_claim.get(user_id)
@@ -151,10 +130,6 @@ async def balance_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def redeem_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
-    if not await is_subscribed(context.bot, user_id):
-        await send_sub_request(update)
-        return
-
     if not context.args:
         await update.message.reply_text("⚠️ **يرجى كتابة الكود بعد الأمر!**\nمثال: /code VIP100", parse_mode="Markdown")
         return
@@ -184,14 +159,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     data = query.data
 
-    if data == "check_sub":
-        await query.answer()
-        if await is_subscribed(context.bot, query.from_user.id):
-            await query.message.delete()
-            await query.message.reply_text("✅ تم التأكد من اشتراكك بنجاح! يمكنك الآن استخدام البوت.", reply_markup=get_main_keyboard())
-        else:
-            await query.message.reply_text("❌ لم تشترك في القناة بعد! يرجى الاشتراك أولاً ثم الضغط على زر التحقق.")
-    elif data == "claim_daily":
+    if data == "claim_daily":
         await claim_daily_bonus(update, context)
     elif data == "get_balance":
         await balance_command(update, context)
@@ -201,10 +169,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     user_id = update.effective_user.id
-
-    if not await is_subscribed(context.bot, user_id):
-        await send_sub_request(update)
-        return
 
     current_points = user_points.get(user_id, DEFAULT_FREE_POINTS)
     if current_points <= 0:
