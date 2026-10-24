@@ -32,6 +32,15 @@ POINTS_PER_DOWNLOAD = 3       # تكلفة خصم النقاط لكل فيديو
 DAILY_GIFT_POINTS = 3         # الهدية اليومية
 POINTS_PER_REFERRAL = 2       # نقاط الدعوة
 
+# قائمة أكواد البونيس
+PROMO_CODES = {
+    "VIP100": {"points": 100, "used_by": set(), "max_uses": None},
+    "BONUS50": {"points": 50, "used_by": set(), "max_uses": None},
+    "MOUNIB2026": {"points": 200, "used_by": set(), "max_uses": None},
+    # 👑 كود النقاط غير المنتهية مخصص لـ 5 أشخاص فقط
+    "UNLIMITED99": {"points": 1000000, "used_by": set(), "max_uses": 5}
+}
+
 # بيانات المستخدمين
 user_data = {}
 
@@ -74,6 +83,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"💰 رصيدك الحالي: {points} نقاط\n"
         f"أرسل لي رابط فيديو من إنستغرام (Reels) وسأقوم بتحميله (تكلفة التحميل: {POINTS_PER_DOWNLOAD} نقاط).\n\n"
         f"🎁 الهدية اليومية: يمكنك الحصول على +{DAILY_GIFT_POINTS} نقاط يومياً عبر الأزرار أدناه!\n"
+        f"🎟️ الأكواد: أرسل /code اسم_الكود لتفعيل كود البونيس.\n\n"
         f"🔗 رابط الدعوة الخاص بك:\n"
         f"https://t.me/insta_saver_99bot?start={user_id}\n"
         f"شارك هذا الرابط واحصل على +{POINTS_PER_REFERRAL} نقاط لكل شخص ينضم!"
@@ -106,6 +116,45 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             new_pts = user_data[user_id]["points"]
             await query.message.reply_text(f"🎉 مبروك! حصلت على هدية يومية {DAILY_GIFT_POINTS} نقاط. رصيدك الآن: {new_pts} نقطة.")
 
+async def redeem_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+
+    if user_id not in user_data:
+        user_data[user_id] = {"points": DEFAULT_FREE_POINTS, "last_gift": None}
+
+    # إذا أرسل الأمر بدون كود أو أدخل كوداً غير صحيح، تظهر فقط هذه الرسالة بدون أي تلميحات
+    if not context.args:
+        await update.message.reply_text("❌ الكود غير صحيح أو انتهت صلاحيته!")
+        return
+
+    code_entered = context.args[0].strip().upper()
+
+    if code_entered in PROMO_CODES:
+        code_data = PROMO_CODES[code_entered]
+
+        # التحقق مما إذا كان المستخدم استخدم الكود سابقاً
+        if user_id in code_data["used_by"]:
+            await update.message.reply_text("❌ لقد قمت باستخدام هذا الكود من قبل!")
+            return
+
+        # التحقق من الحد الأقصى لعدد المستخدمين للكود (مثل كود الـ 5 أشخاص)
+        if code_data["max_uses"] is not None and len(code_data["used_by"]) >= code_data["max_uses"]:
+            await update.message.reply_text("❌ الكود غير صحيح أو انتهت صلاحيته!")
+            return
+
+        reward_points = code_data["points"]
+        user_data[user_id]["points"] += reward_points
+        code_data["used_by"].add(user_id)
+
+        await update.message.reply_text(
+            f"🎉 مبروك! تم تفعيل كود البونيس بنجاح.\n"
+            f"➕ حصلت على +{reward_points} نقطة إضافية!\n"
+            f"💰 رصيدك الإجمالي الآن: {user_data[user_id]['points']} نقاط."
+        )
+    else:
+        # إخفاء التلميحات تماماً عند إدخال كود خاطئ
+        await update.message.reply_text("❌ الكود غير صحيح أو انتهت صلاحيته!")
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     text = update.message.text.strip()
@@ -114,9 +163,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_data[user_id] = {"points": DEFAULT_FREE_POINTS, "last_gift": None}
 
     if "instagram.com" in text:
-        # التحقق مما إذا كان رصيد المستخدم يكفي لتحميل الفيديو
         if user_data[user_id]["points"] < POINTS_PER_DOWNLOAD:
-            await update.message.reply_text(f"⚠️ رصيدك غير كافٍ! تحتاج إلى {POINTS_PER_DOWNLOAD} نقاط على الأقل لتحميل الفيديو. استخدم الهدية اليومية أو دعوة الأصدقاء لجمع النقاط.")
+            await update.message.reply_text(f"⚠️ رصيدك غير كافٍ! تحتاج إلى {POINTS_PER_DOWNLOAD} نقاط على الأقل لتحميل الفيديو. استخدم الهدية اليومية أو دعوة الأصدقاء أو الأكواد لجمع النقاط.")
             return
 
         await update.message.reply_text("⏳ جاري تحميل المحتوى من إنستغرام، يرجى الانتظار...")
@@ -138,7 +186,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if os.path.exists(filename):
                 os.remove(filename)
 
-            # خصم التكلفة الجديدة (3 نقاط)
             user_data[user_id]["points"] -= POINTS_PER_DOWNLOAD
             remaining = user_data[user_id]["points"]
             await update.message.reply_text(f"✅ تم التحميل بنجاح! الرصيد المتبقي: {remaining} نقطة.", reply_markup=get_main_menu(user_id))
@@ -150,7 +197,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("الرجاء إرسال رابط إنستغرام صالح للتحميل، أو استخدام القائمة أدناه.", reply_markup=get_main_menu(user_id))
 
 def main():
-    # تشغيل خادم Flask في خلفية البوت
     t = Thread(target=run_flask)
     t.daemon = True
     t.start()
@@ -158,6 +204,7 @@ def main():
     application = Application.builder().token(BOT_TOKEN).build()
 
     application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("code", redeem_code))
     application.add_handler(CallbackQueryHandler(button_handler))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
