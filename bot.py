@@ -8,7 +8,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
 import yt_dlp
 
-# --- 1. إعداد خادم ويب خفيف للبقاء البوت Live على Render ---
+# --- 1. إعداد خادم ويب خفيف لبقاء البوت Live على Render ---
 app = Flask(__name__)
 
 @app.route('/')
@@ -51,13 +51,11 @@ user_data = {}
 async def check_subscription(user_id, context: ContextTypes.DEFAULT_TYPE):
     try:
         member = await context.bot.get_chat_member(chat_id=REQUIRED_CHANNEL, user_id=user_id)
-        # الحالات التي تعني أن المستخدم مشترك
         if member.status in ['member', 'administrator', 'creator']:
             return True
         return False
     except Exception as e:
         logger.error(f"خطأ في التحقق من الاشتراك: {e}")
-        # في حال حدث خطأ تقني (مثل عدم رفع البوت مشرفاً في القناة)، يفضل السماح له مؤقتاً أو التعامل معه بحذر
         return False
 
 # لوحة مفاتيح طلب الاشتراك الإجباري
@@ -81,42 +79,4 @@ def get_main_menu(user_id):
     return InlineKeyboardMarkup(keyboard)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    
-    # التحقق من الاشتراك الإجباري أولاً
-    is_subscribed = await check_subscription(user_id, context)
-    if not is_subscribed:
-        sub_text = (
-            "⚠️ **عذراً، يجب عليك الاشتراك في قناة البوت أولاً لكي تتمكن من استخدامه!**\n\n"
-            "اشترك في القناة عبر الزر أدناه ثم اضغط على (✅ تحققت من الاشتراك)."
-        )
-        if update.message:
-            await update.message.reply_text(sub_text, reply_markup=get_subscription_keyboard())
-        elif update.callback_query:
-            await update.callback_query.message.edit_text(sub_text, reply_markup=get_subscription_keyboard())
-        return
-
-    if user_id not in user_data:
-        user_data[user_id] = {"points": DEFAULT_FREE_POINTS, "last_gift": None}
-        
-        # نظام الدعوات عبر الـ start args
-        if context.args:
-            try:
-                referrer_id = int(context.args[0])
-                if referrer_id != user_id and referrer_id in user_data:
-                    user_data[referrer_id]["points"] += POINTS_PER_REFERRAL
-                    await context.bot.send_message(
-                        chat_id=referrer_id, 
-                        text=f"🎉 قام شخص بالانضمام عبر رابطك! حصلت على +{POINTS_PER_REFERRAL} نقاط."
-                    )
-            except ValueError:
-                pass
-
-    points = user_data[user_id]["points"]
-    
-    welcome_text = (
-        f"أهلاً بك في محمل فيديوهات إنستغرام! 📸\n\n"
-        f"💰 رصيدك الحالي: {points} نقاط\n"
-        f"أرسل لي رابط فيديو من إنستغرام (Reels) وسأقوم بتحميله (تكلفة التحميل: {POINTS_PER_DOWNLOAD} نقاط).\n\n"
-        f"🎁 الهدية اليومية: يمكنك الحصول
-
+    user
