@@ -26,8 +26,9 @@ logger = logging.getLogger(__name__)
 
 BOT_TOKEN = "8825604569:AAFv7EHlnJwZDeaXoGxY7nTrzQso2TeriV8"
 
-# 📢 معرف القناة للاشتراك الإجباري
+# 📢 معرف القناة للاشتراك الإجباري والقناة الرسمية
 REQUIRED_CHANNEL = "@ins2ta"
+CHANNEL_URL = "https://t.me/ins2ta"
 
 # الإعدادات الاقتصادية للبوت
 DEFAULT_FREE_POINTS = 6       
@@ -60,7 +61,7 @@ async def check_subscription(user_id, context: ContextTypes.DEFAULT_TYPE):
 # أزرار طلب الاشتراك الإجباري
 def get_subscription_keyboard():
     keyboard = [
-        [InlineKeyboardButton("📢 اشترك في القناة", url="https://t.me/ins2ta")],
+        [InlineKeyboardButton("📢 اشترك في القناة", url=CHANNEL_URL)],
         [InlineKeyboardButton("✅ تحققت من الاشتراك", callback_data="check_sub")]
     ]
     return InlineKeyboardMarkup(keyboard)
@@ -73,7 +74,7 @@ def get_main_menu(user_id):
             InlineKeyboardButton("🎁 الهدية اليومية", callback_data="daily_gift")
         ],
         [
-            InlineKeyboardButton("📢 القناة الرسمية", url="https://t.me/mounibdch") 
+            InlineKeyboardButton("📢 القناة الرسمية", url=CHANNEL_URL) 
         ]
     ]
     return InlineKeyboardMarkup(keyboard)
