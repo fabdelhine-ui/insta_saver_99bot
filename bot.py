@@ -24,7 +24,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-BOT_TOKEN = "8825604569:AAFv7EHlnJwZDeaXoGxY7nTrzQso2TeriV8"
+BOT_TOKEN = "8825604569:AAHwxtJHQyKJEK455BvdQfFnAekgt00VJMM"
 
 # 📢 معرف القناة للاشتراك الإجباري والقناة الرسمية
 REQUIRED_CHANNEL = "@ins2ta"
